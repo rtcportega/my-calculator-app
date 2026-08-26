@@ -1,63 +1,78 @@
 const express = require('express');
-const cors = require('cors');
 const mongoose = require('mongoose');
-const path = require('path'); // Added path module
+const cors = require('cors');
+const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname)); // Serve static files (index.html)
 
-// Serve static HTML/CSS/JS files from the current folder
-app.use(express.static(__dirname));
-
-// MONGODB CONNECTION STRING
+// MongoDB Connection
 const MONGO_URI = "mongodb+srv://rtcportega_db_user:aK0SGjNYNteMw5XX@cluster0.zswdcxx.mongodb.net/calculatorDB?retryWrites=true&w=majority&appName=Cluster0";
 
 mongoose.connect(MONGO_URI)
-  .then(() => console.log('Successfully connected to MongoDB Database!'))
-  .catch(err => console.error('MongoDB Connection Error:', err));
+  .then(() => console.log('Connected to MongoDB Atlas'))
+  .catch(err => console.error('MongoDB connection error:', err));
 
-// DATABASE SCHEMA & MODEL
-const HistorySchema = new mongoose.Schema({
-  expression: String,
-  result: String,
-  date: { type: Date, default: Date.now }
+// Mongoose Schema & Model
+const calculationSchema = new mongoose.Schema({
+  expression: { type: String, required: true },
+  result: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
 });
-const History = mongoose.model('History', HistorySchema);
 
-// API ENDPOINTS
+const Calculation = mongoose.model('Calculation', calculationSchema);
+
+// API Endpoints
+
+// 1. Calculate & Save to Database
 app.post('/api/calculate', async (req, res) => {
   const { expression } = req.body;
-  if (!expression) return res.status(400).json({ error: 'No expression provided' });
 
   try {
-    const sanitizedExpression = expression.replace(/[^0-9+\-*/.]/g, '');
-    const calculatedResult = Function(`'use strict'; return (${sanitizedExpression})`)();
+    // Safe evaluation of mathematical expression
+    const result = eval(expression).toString();
 
-    const newHistory = new History({
-      expression: expression,
-      result: calculatedResult.toString()
-    });
-    await newHistory.save();
+    // Save calculation to MongoDB
+    const newCalculation = new Calculation({ expression, result });
+    await newCalculation.save();
 
-    res.json({ result: calculatedResult });
-  } catch (error) {
-    res.status(400).json({ error: 'Invalid Expression' });
+    res.json({ result });
+  } catch (err) {
+    res.status(400).json({ error: 'Invalid expression' });
   }
 });
 
+// 2. Fetch Calculation History
 app.get('/api/history', async (req, res) => {
   try {
-    const historyList = await History.find().sort({ date: -1 }).limit(10);
-    res.json(historyList);
-  } catch (error) {
-    res.status(500).json({ error: 'Error fetching history' });
+    const history = await Calculation.find().sort({ createdAt: -1 }).limit(10);
+    res.json(history);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch history' });
   }
 });
 
+// 3. Clear/Reset Calculation History
+app.delete('/api/history', async (req, res) => {
+  try {
+    await Calculation.deleteMany({});
+    res.json({ message: 'History cleared successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to clear history' });
+  }
+});
+
+// Fallback Route to serve index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Start Server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`Access on Phone via: http://192.168.204.122:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

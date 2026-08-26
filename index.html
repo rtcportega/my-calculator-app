@@ -16,7 +16,7 @@
       margin: 0;
     }
     .calculator {
-      background-color: #ff4daf;
+      background-color: #2c3e50;
       padding: 20px;
       border-radius: 12px;
       box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
@@ -45,7 +45,7 @@
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      background-color: #f1a7f8;
+      background-color: #bdc3c7;
       transition: 0.2s;
     }
     button:hover { background-color: #95a5a6; }
@@ -61,6 +61,23 @@
       border-radius: 12px;
       box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
       width: 250px;
+    }
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .btn-reset {
+      background-color: #e74c3c;
+      color: white;
+      padding: 5px 10px;
+      font-size: 12px;
+      height: auto;
+      border-radius: 4px;
+    }
+    .btn-reset:hover {
+      background-color: #c0392b;
     }
     .history-list {
       list-style: none;
@@ -107,7 +124,10 @@
   </div>
 
   <div class="history-container">
-    <h3>Yna's Calculator History</h3>
+    <div class="history-header">
+      <h3 style="margin: 0;">MongoDB History</h3>
+      <button class="btn-reset" onclick="clearHistory()">Clear</button>
+    </div>
     <ul class="history-list" id="historyList">Loading history...</ul>
   </div>
 
@@ -128,7 +148,6 @@
       if (!expression) return;
 
       try {
-        // Relative path used for cloud compatibility
         const response = await fetch('/api/calculate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -149,7 +168,6 @@
 
     async function fetchHistory() {
       try {
-        // Relative path used for cloud compatibility
         const response = await fetch('/api/history');
         const history = await response.json();
 
@@ -170,7 +188,25 @@
       }
     }
 
-    // Load history when page opens
+    async function clearHistory() {
+      if (!confirm('Sigurado ka nga gusto nimo ipa-delete ang tanang history?')) return;
+
+      try {
+        const response = await fetch('/api/history', {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          fetchHistory(); // I-refresh ang listahan
+        } else {
+          alert('Failed to clear history');
+        }
+      } catch (err) {
+        alert('Error connecting to server');
+      }
+    }
+
+    // Load history on load
     fetchHistory();
   </script>
 </body>
