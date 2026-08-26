@@ -34,10 +34,8 @@ app.post('/api/calculate', async (req, res) => {
   const { expression } = req.body;
 
   try {
-    // Safe evaluation of mathematical expression
     const result = eval(expression).toString();
 
-    // Save calculation to MongoDB
     const newCalculation = new Calculation({ expression, result });
     await newCalculation.save();
 
@@ -67,7 +65,7 @@ app.delete('/api/history', async (req, res) => {
   }
 });
 
-// Fallback Route to serve index.html
+// Fallback Route to serve index.html (Express v5 compatible syntax)
 app.get('/{*splat}', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
