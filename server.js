@@ -68,7 +68,7 @@ app.delete('/api/history', async (req, res) => {
 });
 
 // Fallback Route to serve index.html
-app.get('*', (req, res) => {
+app.get('/{*splat}', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
