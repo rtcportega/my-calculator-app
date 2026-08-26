@@ -75,6 +75,7 @@
       font-size: 12px;
       height: auto;
       border-radius: 4px;
+      cursor: pointer;
     }
     .btn-reset:hover {
       background-color: #c0392b;
@@ -125,7 +126,7 @@
 
   <div class="history-container">
     <div class="history-header">
-      <h3 style="margin: 0;">MongoDB History</h3>
+      <h3 style="margin: 0;">Yna's Calculator</h3>
       <button class="btn-reset" onclick="clearHistory()">Clear</button>
     </div>
     <ul class="history-list" id="historyList">Loading history...</ul>
@@ -197,7 +198,7 @@
         });
 
         if (response.ok) {
-          fetchHistory(); // I-refresh ang listahan
+          fetchHistory();
         } else {
           alert('Failed to clear history');
         }
@@ -206,7 +207,7 @@
       }
     }
 
-    // Load history on load
+    // Unang pag-load sa history
     fetchHistory();
   </script>
 </body>
