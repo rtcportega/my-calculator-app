@@ -3,36 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fullstack Calculator with History</title>
+  <title>Fullstack Calculator</title>
   <style>
     body {
       font-family: Arial, sans-serif;
+      background-color: #f0f2f5;
       display: flex;
-      gap: 20px;
       justify-content: center;
       align-items: flex-start;
-      padding-top: 50px;
+      padding-top: 40px;
+      gap: 20px;
       margin: 0;
-      background-color: #eef2f5;
     }
     .calculator {
       background-color: #2c3e50;
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
       width: 280px;
     }
-    #display {
+    .display {
       width: 100%;
       height: 50px;
       background-color: #ecf0f1;
-      color: #2c3e50;
-      font-size: 1.8rem;
-      text-align: right;
-      padding: 5px 10px;
-      box-sizing: border-box;
       border: none;
       border-radius: 6px;
+      font-size: 24px;
+      text-align: right;
+      padding-right: 10px;
+      box-sizing: border-box;
       margin-bottom: 15px;
     }
     .buttons {
@@ -41,129 +40,138 @@
       gap: 10px;
     }
     button {
-      padding: 15px;
-      font-size: 1.2rem;
+      height: 50px;
+      font-size: 18px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       background-color: #bdc3c7;
-      transition: background 0.2s;
+      transition: 0.2s;
     }
     button:hover { background-color: #95a5a6; }
     button.operator { background-color: #e67e22; color: white; }
     button.operator:hover { background-color: #d35400; }
     button.clear { background-color: #e74c3c; color: white; }
     button.clear:hover { background-color: #c0392b; }
-    .zero { grid-column: span 2; }
+    button.zero { grid-column: span 2; }
 
-    /* Dagdag Styling para sa History Container sa kilid */
-    .history-box {
+    .history-container {
       background: white;
       padding: 20px;
       border-radius: 12px;
+      box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
       width: 250px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
-    .history-box h3 { margin-top: 0; color: #2c3e50; }
-    .history-list { list-style: none; padding: 0; margin: 0; max-height: 280px; overflow-y: auto; }
-    .history-list li { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.95rem; color: #333; }
+    .history-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+    .history-item {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+      color: #333;
+    }
   </style>
 </head>
 <body>
 
-  <!-- CALCULATOR FRONTEND -->
   <div class="calculator">
-    <input type="text" id="display" readonly>
+    <input type="text" class="display" id="display" readonly>
     <div class="buttons">
       <button class="clear" onclick="clearDisplay()">C</button>
-      <button onclick="appendValue('/')" class="operator">÷</button>
-      <button onclick="appendValue('*')" class="operator">×</button>
-      <button onclick="appendValue('-')" class="operator">-</button>
+      <button class="operator" onclick="appendCharacter('/')">&divide;</button>
+      <button class="operator" onclick="appendCharacter('*')">&times;</button>
+      <button class="operator" onclick="appendCharacter('-')">-</button>
       
-      <button onclick="appendValue('7')">7</button>
-      <button onclick="appendValue('8')">8</button>
-      <button onclick="appendValue('9')">9</button>
-      <button onclick="appendValue('+')" class="operator">+</button>
+      <button onclick="appendCharacter('7')">7</button>
+      <button onclick="appendCharacter('8')">8</button>
+      <button onclick="appendCharacter('9')">9</button>
+      <button class="operator" onclick="appendCharacter('+')">+</button>
       
-      <button onclick="appendValue('4')">4</button>
-      <button onclick="appendValue('5')">5</button>
-      <button onclick="appendValue('6')">6</button>
-      <button onclick="sendToBackend()" class="operator">=</button>
+      <button onclick="appendCharacter('4')">4</button>
+      <button onclick="appendCharacter('5')">5</button>
+      <button onclick="appendCharacter('6')">6</button>
+      <button class="operator" onclick="calculate()">=</button>
       
-      <button onclick="appendValue('1')">1</button>
-      <button onclick="appendValue('2')">2</button>
-      <button onclick="appendValue('3')">3</button>
-      <button onclick="appendValue('.')">.</button>
+      <button onclick="appendCharacter('1')">1</button>
+      <button onclick="appendCharacter('2')">2</button>
+      <button onclick="appendCharacter('3')">3</button>
+      <button onclick="appendCharacter('.')">.</button>
       
-      <button onclick="appendValue('0')" class="zero">0</button>
+      <button class="zero" onclick="appendCharacter('0')">0</button>
     </div>
   </div>
 
-  <!-- HISTORY CONTAINER (MONGODB DATA) -->
-  <div class="history-box">
+  <div class="history-container">
     <h3>MongoDB History</h3>
-    <ul id="historyList" class="history-list">
-      <li>Loading history...</li>
-    </ul>
+    <ul class="history-list" id="historyList">Loading history...</ul>
   </div>
 
   <script>
     const display = document.getElementById('display');
+    const historyList = document.getElementById('historyList');
 
-    function appendValue(val) { display.value += val; }
-    function clearDisplay() { display.value = ''; }
+    function appendCharacter(char) {
+      display.value += char;
+    }
 
-    // 1. IPADALA ANG EXPRESSION AT I-SAVE SA DATABASE
-    async function sendToBackend() {
-      const currentInput = display.value;
-      if (!currentInput) return;
+    function clearDisplay() {
+      display.value = '';
+    }
+
+    async function calculate() {
+      const expression = display.value;
+      if (!expression) return;
 
       try {
-        const response = await fetch('http://localhost:3000/api/calculate', {
+        // Relative path used for cloud compatibility
+        const response = await fetch('/api/calculate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ expression: currentInput })
+          body: JSON.stringify({ expression })
         });
 
         const data = await response.json();
-
-        if (response.ok) {
+        if (data.result !== undefined) {
           display.value = data.result;
-          fetchHistory(); // I-refresh ang history UI pagkahuman mag-calculate
+          fetchHistory();
         } else {
           display.value = 'Error';
         }
-      } catch (error) {
+      } catch (err) {
         display.value = 'Server Offline';
       }
     }
 
-    // 2. KUNHA ANG HISTORY DATA GALING SA MONGODB BACKEND
     async function fetchHistory() {
       try {
-        const response = await fetch('http://localhost:3000/api/history');
+        // Relative path used for cloud compatibility
+        const response = await fetch('/api/history');
         const history = await response.json();
-        const listElement = document.getElementById('historyList');
 
-        listElement.innerHTML = '';
+        historyList.innerHTML = '';
         if (history.length === 0) {
-          listElement.innerHTML = '<li>No history found.</li>';
+          historyList.innerHTML = '<li>No history yet</li>';
           return;
         }
 
         history.forEach(item => {
           const li = document.createElement('li');
+          li.className = 'history-item';
           li.textContent = `${item.expression} = ${item.result}`;
-          listElement.appendChild(li);
+          historyList.appendChild(li);
         });
-      } catch (error) {
-        console.error('Error fetching history:', error);
+      } catch (err) {
+        historyList.innerHTML = '<li style="color:red;">Error loading history</li>';
       }
     }
 
-    // I-load dayon ang History gikan sa MongoDB pag-open sa page
+    // Load history when page opens
     fetchHistory();
   </script>
-
 </body>
 </html>
